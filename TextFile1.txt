@@ -1,0 +1,217 @@
+ foreach(JObject j in json.results)
+            {
+
+                //Console.WriteLine(j);
+                Console.WriteLine(j["name"]);
+                Console.WriteLine(j["formatted_address"]);
+                Console.WriteLine("--------------");
+            }            
+            //webRequest.BeginGetResponse(new AsyncCallback(RequestCompleted), webRequest);
+            List<string> addresse = getSites();
+            foreach (string address in addresse)
+            {
+                Console.WriteLine(address);
+                if(address.Contains("contact")) findemail(address);
+            }
+             * */
+            //Console.WriteLine(getSites());
+            List<KeyValuePair<string,string>> addresse = getAddress();
+            
+            
+            string placeId = addresse[0].Value;
+            string key = "AIzaSyChaJGcYSjTMyE6H-531TFnylPQG05H_o8";
+            string url = "https://maps.googleapis.com/maps/api/place/details/xml?placeid=" + placeId + "&key=" + key;
+            HttpWebRequest webRequest = HttpWebRequest.Create(url) as HttpWebRequest;
+            webRequest.Timeout = 20000;
+            webRequest.Method = "GET";
+            WebResponse response = webRequest.GetResponse();
+            Stream stream = response.GetResponseStream();
+            StreamReader datastream = new StreamReader(stream);
+            string data = datastream.ReadToEnd();
+            Console.WriteLine(data);
+            XmlReader XmlReader = XmlReader.Create(new StringReader(data));
+            string website = "";
+            string phone = "";
+            string propername = "";
+            while (XmlReader.Read())
+            {
+                XmlReader.ReadToFollowing("name");
+                XmlReader.Read();
+                propername = XmlReader.Value;
+                Console.WriteLine(XmlReader.Value);
+                XmlReader.ReadToFollowing("formatted_phone_number");
+                XmlReader.Read();
+                Console.WriteLine(XmlReader.Value);
+                XmlReader.ReadToFollowing("website");
+                XmlReader.Read();
+                website = XmlReader.Value;
+                Console.WriteLine(XmlReader.Value);
+            }
+            
+            XmlReader.Dispose();
+            Console.WriteLine(website);
+            Console.WriteLine(propername);
+            
+           
+            Console.ReadKey();           
+
+             
+        }
+        private static void findemail(string url)
+        {
+            string emailPattern = @"\w+@\w+.*";
+            string homeUrl = url;
+            HttpWebRequest webRequest = HttpWebRequest.Create(url) as HttpWebRequest;
+            webRequest.Timeout = 20000;
+            webRequest.Method = "GET";
+            WebResponse response = webRequest.GetResponse();
+            Stream stream = response.GetResponseStream();
+            StreamReader datastream = new StreamReader(stream);
+            string data = datastream.ReadToEnd();
+            MatchCollection matches = Regex.Matches(data, emailPattern);           
+            if (matches.Count > 0)
+            {
+                foreach (Match m in matches)
+                {
+
+                    Console.WriteLine(m.Value);
+                }
+            }
+        }
+        private static List<string> getSites(string pQuery)
+        {
+            List<string> sites = new List<string>();
+            string matchstr = @"link"".*""";
+            string matchtele = @"telephone"".*""";
+            string site = "";
+            string engineId = "006184760086798273588:ve7x4tngjx8";
+            string pKey = "AIzaSyChaJGcYSjTMyE6H-531TFnylPQG05H_o8";
+            //string pQuery = "microsoft australia";
+            string url = "https://www.googleapis.com/customsearch/v1?key=" + pKey + "&cx=" + engineId + "&q=" + pQuery;
+            HttpWebRequest webRequest = HttpWebRequest.Create(url) as HttpWebRequest;
+            webRequest.Timeout = 20000;
+            webRequest.Method = "GET";
+            WebResponse response = webRequest.GetResponse();
+            Stream stream = response.GetResponseStream();
+            StreamReader datastream = new StreamReader(stream);
+            string data = datastream.ReadToEnd();
+            
+            
+            char[] delim = new char[1] { '"' };
+            MatchCollection matches = Regex.Matches(data, matchstr);
+            
+            if (matches.Count > 0)
+            {
+                foreach (Match m in matches)
+                {
+
+                    string match = m.Value;
+                    string[] parsedMatch = match.Split(delim);
+                    site = parsedMatch[2];
+                    sites.Add(site);
+                }
+            }
+            MatchCollection matches2 = Regex.Matches(data, matchtele);
+            
+            if (matches2.Count > 0)
+            {
+                foreach (Match m in matches2)
+                {
+
+                    string match = m.Value;
+                    string[] parsedMatch = match.Split(delim);
+                    site = parsedMatch[2];
+                    sites.Add(site);
+                }
+            }
+
+            return sites;
+        }
+        private static List<KeyValuePair<string,string>> getAddress()
+        {
+            List<KeyValuePair<string,string>> addresses = new List<KeyValuePair<string,string>>();
+            string matchstr = @"formatted_address.*""";
+            string id = @"place_id.*""";
+            string address = "";
+            string addressid = "";
+            string pKey = "AIzaSyChaJGcYSjTMyE6H-531TFnylPQG05H_o8";
+            string pQuery = "krantz australia";
+            string url = "https://maps.googleapis.com/maps/api/place/textsearch/xml?query=" + pQuery + "&key=" + pKey;
+            HttpWebRequest webRequest = HttpWebRequest.Create(url) as HttpWebRequest;
+            webRequest.Timeout = 20000;
+            webRequest.Method = "GET";
+            WebResponse response = webRequest.GetResponse();
+            Stream stream = response.GetResponseStream();
+            StreamReader datastream = new StreamReader(stream);
+            string data = datastream.ReadToEnd();
+            //Console.WriteLine(data);
+            //byte[] stuff = Encoding.UTF8.GetBytes(data);
+            //dynamic json = JsonConvert.DeserializeObject(data);
+            //var reader = JsonReaderWriterFactory.CreateJsonReader(Encoding.UTF8.GetBytes(data), new System.Xml.XmlDictionaryReaderQuotas());
+            //var root = XElement.Load(reader);
+            //reader.ReadToFollowing("formatted_address");
+            //reader.MoveToFirstAttribute();
+            char[] delim = new char[1] {'"'};
+           
+            MatchCollection matches = Regex.Matches(data, id);
+            //MatchCollection matches = Regex.Matches(data, ma);
+            Console.WriteLine(data);
+            XmlReader XmlReader = XmlReader.Create(new StringReader(data));
+            while (XmlReader.Read())
+            {
+                XmlReader.ReadToFollowing("formatted_address");
+                XmlReader.Read();
+                address = XmlReader.Value;
+                Console.WriteLine(XmlReader.Value);
+                XmlReader.ReadToFollowing("place_id");                
+                XmlReader.Read();
+                addressid = XmlReader.Value;
+                Console.WriteLine(XmlReader.Value);
+                addresses.Add(new KeyValuePair<string, string>(address, addressid));
+
+            }        
+            
+            
+            return addresses;
+            
+
+        }
+        private static void RequestCompleted(IAsyncResult result)
+        {
+            var request = (HttpWebRequest)result.AsyncState;
+            HttpWebResponse response = (HttpWebResponse)request.EndGetResponse(result);
+            using (var stream = response.GetResponseStream())
+            {
+                var r = new StreamReader(stream);
+                var resp = r.ReadToEnd();
+            }
+        }
+        private static List<string> findAddress(string text)
+        {
+            List<string> address = new List<string>();
+            string addressPattern = @"<ul>[\s\S]*?<\/ul>";
+            MatchCollection newMatches = Regex.Matches(text, addressPattern);
+            foreach (Match match in newMatches)
+            {
+                
+                    address.Add((match.Value).Replace("&nbsp;"," "));
+                
+            }
+ 
+            return address;
+        }
+		 string engineId = "006184760086798273588:ve7x4tngjx8";
+            string key = "AIzaSyChaJGcYSjTMyE6H-531TFnylPQG05H_o8";
+            string query = "crm dynamics sydney";
+            CustomsearchService customSearchService = new CustomsearchService(new Google.Apis.Services.BaseClientService.Initializer() { ApiKey = key });
+            Google.Apis.Customsearch.v1.CseResource.ListRequest listRequest = customSearchService.Cse.List(query);
+            listRequest.Cx = engineId;
+            Search search = listRequest.Execute();
+            foreach (var item in search.Items)
+            {
+                WebScrape site = new WebScrape(item.Link);
+                site.quickSearch();
+                site.showfoundEmails();
+                //Console.WriteLine("Title : " + item.Title + Environment.NewLine + "Link : " + item.Link + Environment.NewLine + Environment.NewLine);
+            }
+            Console.ReadLine();
